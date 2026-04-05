@@ -26,10 +26,24 @@ epochs = st.sidebar.slider("Training Epochs", 10, 50, 20)
 # Cache data loading
 @st.cache_data
 def load_data():
-    """Load NIFTY 50 data from Yahoo Finance"""
-    nifty = yf.download('^NSEI', start='2010-01-01', end=datetime.now().strftime('%Y-%m-%d'), progress=False)
-    return nifty
-
+    """Load NIFTY 50 data from Yahoo Finance with error handling"""
+    try:
+        # Try multiple ticker formats
+        tickers_to_try = ['^NSEI', 'NSEI.NS', '^NIFTYBEES.NS']
+        
+        for ticker in tickers_to_try:
+            try:
+                nifty = yf.download(ticker, start='2015-01-01', end=datetime.now().strftime('%Y-%m-%d'), progress=False)
+                if not nifty.empty and len(nifty) > 100:
+                    return nifty
+            except:
+                continue
+        
+        # If all fail, return empty DataFrame
+        return pd.DataFrame()
+    except Exception as e:
+        print(f"Error loading data: {e}")
+        return pd.DataFrame()
 # Build and train model
 def create_sequences(data, seq_length):
     X, y = [], []
